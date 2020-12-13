@@ -168,12 +168,12 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 
 	//TODO: change values
 	ssh := &easyssh.SSHConfig{
-		User:   "vagrant",
+		User:   "adminUsername",
 		Server: "127.0.0.1",
 		// Optional key or Password without either we try to contact your agent SOCKET
-		//Password: "password",
-		Key:  "/Users/jalmeida/FCT/Tese/Thesis_Test/Online_Folder/server/.vagrant/machines/default/virtualbox/private_key",
-		Port: "2222",
+		Password: "adminPassword2020",
+		//Key:  "key",
+		Port: "22",
 	}
 
 	var cp ContentPost
