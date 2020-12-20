@@ -17,6 +17,7 @@ type ContentPost struct {
 	Author string
 	Group  string
 	Commit string
+	IP string
 }
 
 // create a data structure that can hold the response from the script
@@ -165,19 +166,20 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 	// append this to our Articles array.
 	reqBody, _ := ioutil.ReadAll(r.Body)
 	log.Println(reqBody)
+	
+	var cp ContentPost
+	json.Unmarshal(reqBody, &cp)
 
 	//TODO: change values
 	ssh := &easyssh.SSHConfig{
 		User:   "adminUsername",
-		Server: "10.0.0.4",
+		Server: cp.IP,
 		// Optional key or Password without either we try to contact your agent SOCKET
 		Password: "adminPassword2020",
 		//Key:  "key",
 		Port: "22",
 	}
 
-	var cp ContentPost
-	json.Unmarshal(reqBody, &cp)
 	log.Println(cp)
 	log.Println(cp.Author)
 	log.Println(cp.Group)
