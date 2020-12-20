@@ -169,7 +169,7 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 	//TODO: change values
 	ssh := &easyssh.SSHConfig{
 		User:   "adminUsername",
-		Server: "127.0.0.1",
+		Server: "10.0.0.4",
 		// Optional key or Password without either we try to contact your agent SOCKET
 		Password: "adminPassword2020",
 		//Key:  "key",
