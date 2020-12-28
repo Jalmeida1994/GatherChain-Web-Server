@@ -186,7 +186,7 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 	log.Println(cp.Commit)
 
 	// Call Run method with command you want to run on remote server.
-	stdout, stderr, done, err := ssh.Run("/var/lib/waagent/custom-script/download/0/project/bloc-server/commands/test.sh "+cp.Author+" "+cp.Group+" "+cp.Commit, 60)
+	stdout, stderr, done, err := ssh.Run("/var/lib/project/bloc-server/commands/test.sh "+cp.Author+" "+cp.Group+" "+cp.Commit, 60)
 	// Handle errors
 	if err != nil {
 		log.Println(err)
