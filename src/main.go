@@ -2,15 +2,13 @@ package main
 
 import (
 	"encoding/json"
-	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os"
 	"os/exec"
 
-	"golang.org/x/crypto/ssh"
 	"github.com/gorilla/mux"
+	"golang.org/x/crypto/ssh"
 )
 
 // ContentPost is the json format of the content for all post calls
@@ -199,28 +197,23 @@ func runCommand(cmd string, conn *ssh.Client, w http.ResponseWriter) {
 		panic(err)
 	}
 	defer sess.Close()
-	sessStdOut, err := sess.StdoutPipe()
-	if err != nil {
-		panic(err)
-	}
-	go io.Copy(os.Stdout, sessStdOut)
-	sessStderr, err := sess.StderrPipe()
-	if err != nil {
-		panic(err)
-	}
-	go io.Copy(os.Stderr, sessStderr)
-	err = sess.Run(cmd) // eg., /usr/bin/whoami
+
+	results, err := sess.Output(cmd)
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(500)
 		panic("Can't run remote command: " + err.Error())
-	} else {
-		encoder := json.NewEncoder(w)
-		err = encoder.Encode(os.Stdout)
-		if err != nil {
-			log.Println(err)
-			return
-		}
+	}
+	// convert results into string and populate an instance of
+	// the scriptResponse struct
+	response := scriptResponse{string(results)}
+	// encode response into JSON and deliver back to user
+	encoder := json.NewEncoder(w)
+	err = encoder.Encode(response)
+	if err != nil {
+		log.Println(err)
+		w.WriteHeader(500)
+		panic("Can't return remote command output: " + err.Error())
 	}
 }
 
