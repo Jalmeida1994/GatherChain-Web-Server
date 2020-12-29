@@ -5,7 +5,6 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
-	"os/exec"
 
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/ssh"
@@ -53,24 +52,21 @@ func initNet(w http.ResponseWriter, r *http.Request) {
 	var cp ContentPost
 	json.Unmarshal(reqBody, &cp)
 
+	config := &ssh.ClientConfig{
+		User: "adminUsername",
+		Auth: []ssh.AuthMethod{
+			ssh.Password("adminPassword2020")},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+	conn, err := ssh.Dial("tcp", cp.IP, config)
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
+
 	// TODO: check if user is admin
-	cmd := exec.Command("/vagrant/commands/init.sh", cp.Author, cp.Group, cp.Commit)
-	results, err := cmd.Output()
-	if err != nil {
-		log.Println(err)
-		w.WriteHeader(500)
-		return
-	}
-	// convert results into string and populate an instance of
-	// the scriptResponse struct
-	response := scriptResponse{string(results)}
-	// encode response into JSON and deliver back to user
-	encoder := json.NewEncoder(w)
-	err = encoder.Encode(response)
-	if err != nil {
-		log.Println(err)
-		return
-	}
+	runCommand("sudo /var/lib/waagent/custom-script/download/0/project/bloc-server/commands/init.sh "+cp.Author+" "+cp.Group+" "+cp.Commit, conn, w)
 }
 
 func clearNet(w http.ResponseWriter, r *http.Request) {
@@ -82,24 +78,21 @@ func clearNet(w http.ResponseWriter, r *http.Request) {
 	var cp ContentPost
 	json.Unmarshal(reqBody, &cp)
 
+	config := &ssh.ClientConfig{
+		User: "adminUsername",
+		Auth: []ssh.AuthMethod{
+			ssh.Password("adminPassword2020")},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+	conn, err := ssh.Dial("tcp", cp.IP, config)
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
+
 	// TODO: check if user is admin
-	cmd := exec.Command("/vagrant/commands/clear.sh")
-	results, err := cmd.Output()
-	if err != nil {
-		log.Println(err)
-		w.WriteHeader(500)
-		return
-	}
-	// convert results into string and populate an instance of
-	// the scriptResponse struct
-	response := scriptResponse{string(results)}
-	// encode response into JSON and deliver back to user
-	encoder := json.NewEncoder(w)
-	err = encoder.Encode(response)
-	if err != nil {
-		log.Println(err)
-		return
-	}
+	runCommand("sudo /var/lib/waagent/custom-script/download/0/project/bloc-server/commands/clear.sh", conn, w)
 }
 
 func createGrp(w http.ResponseWriter, r *http.Request) {
@@ -111,23 +104,20 @@ func createGrp(w http.ResponseWriter, r *http.Request) {
 	var cp ContentPost
 	json.Unmarshal(reqBody, &cp)
 
-	cmd := exec.Command("/vagrant/commands/createchannel.sh", cp.Author, cp.Group, cp.Commit)
-	results, err := cmd.Output()
-	if err != nil {
-		log.Println(err)
-		w.WriteHeader(500)
-		return
+	config := &ssh.ClientConfig{
+		User: "adminUsername",
+		Auth: []ssh.AuthMethod{
+			ssh.Password("adminPassword2020")},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
-	// convert results into string and populate an instance of
-	// the scriptResponse struct
-	response := scriptResponse{string(results)}
-	// encode response into JSON and deliver back to user
-	encoder := json.NewEncoder(w)
-	err = encoder.Encode(response)
+
+	conn, err := ssh.Dial("tcp", cp.IP, config)
 	if err != nil {
-		log.Println(err)
-		return
+		panic(err)
 	}
+	defer conn.Close()
+
+	runCommand("sudo /var/lib/waagent/custom-script/download/0/project/bloc-server/commands/createchannel.sh "+cp.Author+" "+cp.Group+" "+cp.Commit, conn, w)
 }
 
 func pushHash(w http.ResponseWriter, r *http.Request) {
@@ -139,24 +129,20 @@ func pushHash(w http.ResponseWriter, r *http.Request) {
 	var cp ContentPost
 	json.Unmarshal(reqBody, &cp)
 
-	cmd := exec.Command("/vagrant/commands/push.sh", cp.Author, cp.Group, cp.Commit)
-	results, err := cmd.Output()
-	if err != nil {
-		log.Println(err)
-		w.WriteHeader(500)
-		return
+	config := &ssh.ClientConfig{
+		User: "adminUsername",
+		Auth: []ssh.AuthMethod{
+			ssh.Password("adminPassword2020")},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
-	// convert results into string and populate an instance of
-	// the scriptResponse struct
-	response := scriptResponse{string(results)}
-	// encode response into JSON and deliver back to user
-	encoder := json.NewEncoder(w)
-	err = encoder.Encode(response)
+
+	conn, err := ssh.Dial("tcp", cp.IP, config)
 	if err != nil {
-		log.Println(err)
-		w.WriteHeader(500)
-		return
+		panic(err)
 	}
+	defer conn.Close()
+
+	runCommand("sudo /var/lib/waagent/custom-script/download/0/project/bloc-server/commands/push.sh "+cp.Author+" "+cp.Group+" "+cp.Commit, conn, w)
 }
 
 func testFunc(w http.ResponseWriter, r *http.Request) {
