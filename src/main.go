@@ -2,13 +2,14 @@ package main
 
 import (
 	"encoding/json"
-	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
 	"os/exec"
 
-	"github.com/SophisticaSean/easyssh"
+	"golang.org/x/crypto/ssh"
 	"github.com/gorilla/mux"
 )
 
@@ -17,7 +18,7 @@ type ContentPost struct {
 	Author string
 	Group  string
 	Commit string
-	IP string
+	IP     string
 }
 
 // create a data structure that can hold the response from the script
@@ -166,19 +167,22 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 	// append this to our Articles array.
 	reqBody, _ := ioutil.ReadAll(r.Body)
 	log.Println(reqBody)
-	
+
 	var cp ContentPost
 	json.Unmarshal(reqBody, &cp)
 
-	//TODO: change values
-	ssh := &easyssh.SSHConfig{
-		User:   "adminUsername",
-		Server: cp.IP,
-		// Optional key or Password without either we try to contact your agent SOCKET
-		Password: "adminPassword2020",
-		//Key:  "key",
-		Port: "22",
+	config := &ssh.ClientConfig{
+		User: "adminUsername",
+		Auth: []ssh.AuthMethod{
+			ssh.Password("adminPassword2020")},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
+
+	conn, err := ssh.Dial("tcp", cp.IP, config)
+	if err != nil {
+		panic(err)
+	}
+	defer conn.Close()
 
 	log.Println(cp)
 	log.Println(cp.Author)
@@ -186,16 +190,33 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 	log.Println(cp.Commit)
 
 	// Call Run method with command you want to run on remote server.
-	stdout, stderr, done, err := ssh.Run("/var/lib/waagent/custom-script/download/0/project/bloc-server/commands/test.sh "+cp.Author+" "+cp.Group+" "+cp.Commit, 60)
-	// Handle errors
+	runCommand("sudo /var/lib/waagent/custom-script/download/0/project/bloc-server/commands/test.sh "+cp.Author+" "+cp.Group+" "+cp.Commit, conn, w)
+}
+
+func runCommand(cmd string, conn *ssh.Client, w http.ResponseWriter) {
+	sess, err := conn.NewSession()
+	if err != nil {
+		panic(err)
+	}
+	defer sess.Close()
+	sessStdOut, err := sess.StdoutPipe()
+	if err != nil {
+		panic(err)
+	}
+	go io.Copy(os.Stdout, sessStdOut)
+	sessStderr, err := sess.StderrPipe()
+	if err != nil {
+		panic(err)
+	}
+	go io.Copy(os.Stderr, sessStderr)
+	err = sess.Run(cmd) // eg., /usr/bin/whoami
 	if err != nil {
 		log.Println(err)
 		w.WriteHeader(500)
 		panic("Can't run remote command: " + err.Error())
 	} else {
-		fmt.Println("don is :", done, "stdout is :", stdout, ";   stderr is :", stderr)
 		encoder := json.NewEncoder(w)
-		err = encoder.Encode(stdout)
+		err = encoder.Encode(os.Stdout)
 		if err != nil {
 			log.Println(err)
 			return
