@@ -23,6 +23,8 @@ type scriptResponse struct {
 	Response string
 }
 
+var appIP string
+
 // Existing code from above
 func handleRequests() {
 	myRouter := mux.NewRouter().StrictSlash(true)
@@ -58,8 +60,10 @@ func initNet(w http.ResponseWriter, r *http.Request) {
 			ssh.Password("adminPassword2020")},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
-
-	conn, err := ssh.Dial("tcp", cp.IP, config)
+	
+	appIP = cp.IP
+	log.Println(appIP)
+	conn, err := ssh.Dial("tcp", appIP, config)
 	if err != nil {
 		panic(err)
 	}
@@ -85,7 +89,7 @@ func clearNet(w http.ResponseWriter, r *http.Request) {
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
-	conn, err := ssh.Dial("tcp", cp.IP, config)
+	conn, err := ssh.Dial("tcp", appIP, config)
 	if err != nil {
 		panic(err)
 	}
@@ -111,7 +115,7 @@ func createGrp(w http.ResponseWriter, r *http.Request) {
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
-	conn, err := ssh.Dial("tcp", cp.IP, config)
+	conn, err := ssh.Dial("tcp", appIP, config)
 	if err != nil {
 		panic(err)
 	}
@@ -136,7 +140,7 @@ func pushHash(w http.ResponseWriter, r *http.Request) {
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
-	conn, err := ssh.Dial("tcp", cp.IP, config)
+	conn, err := ssh.Dial("tcp", appIP, config)
 	if err != nil {
 		panic(err)
 	}
@@ -162,7 +166,7 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
-	conn, err := ssh.Dial("tcp", cp.IP, config)
+	conn, err := ssh.Dial("tcp", appIP, config)
 	if err != nil {
 		panic(err)
 	}
