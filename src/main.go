@@ -61,7 +61,7 @@ func initNet(w http.ResponseWriter, r *http.Request) {
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 	
-	appIP = cp.IP
+	appIP = cp.IP + ":22"
 	log.Println(appIP)
 	conn, err := ssh.Dial("tcp", appIP, config)
 	if err != nil {
