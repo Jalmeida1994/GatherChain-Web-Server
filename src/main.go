@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/ssh"
 )
@@ -27,6 +28,17 @@ var appIP string
 
 // Existing code from above
 func handleRequests() {
+	op := &redis.Options{Addr: redisHost, Password: redisPassword, TLSConfig: &tls.Config{MinVersion: tls.VersionTLS12}, WriteTimeout: 5 * time.Second}
+	client := redis.NewClient(op)
+
+	ctx := context.Background()
+	err := client.Ping(ctx).Err()
+	if err != nil {
+		log.Fatalf("failed to connect with redis instance at %s - %v", redisHost, err)
+	}
+
+	uh := userHandler{client: client}
+	
 	myRouter := mux.NewRouter().StrictSlash(true)
 	// creates a new instance of a mux router
 	myRouter.HandleFunc("/test", testFunc).Methods("POST")
@@ -209,6 +221,8 @@ func runCommand(cmd string, conn *ssh.Client, w http.ResponseWriter) {
 
 func main() {
 	port := 8010
+	redisHost := os.Getenv("REDIS_HOST")
+    redisPassword := os.Getenv("REDIS_PASSWORD")
 	log.Printf("Starting webserver on port %d\n", port)
 	handleRequests()
 }
