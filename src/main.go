@@ -24,6 +24,10 @@ type scriptResponse struct {
 	Response string
 }
 
+type userHandler struct {
+	client *redis.Client
+}
+
 var appIP string
 
 // Existing code from above
@@ -38,7 +42,7 @@ func handleRequests() {
 	}
 
 	uh := userHandler{client: client}
-	
+
 	myRouter := mux.NewRouter().StrictSlash(true)
 	// creates a new instance of a mux router
 	myRouter.HandleFunc("/test", testFunc).Methods("POST")
@@ -49,6 +53,7 @@ func handleRequests() {
 
 	// student commands
 	myRouter.HandleFunc("/creategroup", createGrp).Methods("POST")
+	myRouter.HandleFunc("/registernumber", registerNr).Methods("POST")
 	myRouter.HandleFunc("/push", pushHash).Methods("POST")
 
 	// finally, instead of passing in nil, we want
@@ -134,6 +139,34 @@ func createGrp(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	runCommand("sudo /var/lib/waagent/custom-script/download/0/project/bloc-server/commands/createchannel.sh "+cp.Author+" "+cp.Group+" "+cp.Commit, conn, w)
+}
+
+func (uh userHandler) registerNr(w http.ResponseWriter, r *http.Request) {
+	// get the body of our POST request
+	// unmarshal this into a new Article struct
+	// append this to our Articles array.
+	reqBody, _ := ioutil.ReadAll(r.Body)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	var u map[string]interface{}
+	err = json.Unmarshal([]byte(reqBody), &u)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	userid := u["Author"].(string)
+	_, err = uh.client.HSet(r.Context(), keyPrefix+userid, u).Result()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusCreated)
 }
 
 func pushHash(w http.ResponseWriter, r *http.Request) {
