@@ -3,8 +3,12 @@ package main
 import (
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
+	"os"
+	"context"
+	"crypto/tls"
+	"log"
+	"time"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/mux"
@@ -28,10 +32,14 @@ type userHandler struct {
 	client *redis.Client
 }
 
+const keyPrefix = "user:"
+
 var appIP string
 
 // Existing code from above
 func handleRequests() {
+	redisHost := os.Getenv("REDIS_HOST")
+    redisPassword := os.Getenv("REDIS_PASSWORD")
 	op := &redis.Options{Addr: redisHost, Password: redisPassword, TLSConfig: &tls.Config{MinVersion: tls.VersionTLS12}, WriteTimeout: 5 * time.Second}
 	client := redis.NewClient(op)
 
@@ -146,7 +154,7 @@ func (uh userHandler) registerNr(w http.ResponseWriter, r *http.Request) {
 	// get the body of our POST request
 	// unmarshal this into a new Article struct
 	// append this to our Articles array.
-	reqBody, _ := ioutil.ReadAll(r.Body)
+	reqBody, err := ioutil.ReadAll(r.Body)
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -277,8 +285,6 @@ func runCommand(cmd string, conn *ssh.Client, w http.ResponseWriter) {
 
 func main() {
 	port := 8010
-	redisHost := os.Getenv("REDIS_HOST")
-    redisPassword := os.Getenv("REDIS_PASSWORD")
 	log.Printf("Starting webserver on port %d\n", port)
 	handleRequests()
 }
