@@ -1,6 +1,6 @@
 # Dockerfile.deploy
 
-FROM golang:1.15.6 as builder
+FROM golang:1.16 as builder
 
 ENV APP_USER app
 ENV APP_HOME /go/src/gatherchain-app
