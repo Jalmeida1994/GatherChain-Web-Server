@@ -53,7 +53,8 @@ func handleRequests() {
 
 	// student commands
 	myRouter.HandleFunc("/creategroup", createGrp).Methods("POST")
-	myRouter.HandleFunc("/registernumber", registerNr).Methods("POST")
+	myRouter.HandleFunc("/registernumber", uh.registerNr).Methods("POST")
+	myRouter.HandleFunc("/users/{Author}", uh.getUser).Methods("GET")
 	myRouter.HandleFunc("/push", pushHash).Methods("POST")
 
 	// finally, instead of passing in nil, we want
@@ -167,6 +168,28 @@ func (uh userHandler) registerNr(w http.ResponseWriter, r *http.Request) {
 	}
 
 	w.WriteHeader(http.StatusCreated)
+}
+
+func (uh userHandler) getUser(w http.ResponseWriter, r *http.Request) {
+	userid := mux.Vars(r)["Author"]
+	info, err := uh.client.HGetAll(r.Context(), keyPrefix+userid).Result()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	if len(info) == 0 {
+		w.WriteHeader(http.StatusNotFound)
+		return
+	}
+
+	w.Header().Add("Content-Type", "application/json")
+	err = json.NewEncoder(w).Encode(info)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		w.Header().Del("Content-Type")
+	}
 }
 
 func pushHash(w http.ResponseWriter, r *http.Request) {
