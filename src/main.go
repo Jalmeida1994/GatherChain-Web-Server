@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"os"
 	"context"
-	"crypto/tls"
+//	"crypto/tls"
 	"log"
 	"time"
 
@@ -40,7 +40,7 @@ var appIP string
 func handleRequests() {
 	redisHost := os.Getenv("REDIS_HOST")
     redisPassword := os.Getenv("REDIS_PASSWORD")
-	op := &redis.Options{Addr: redisHost, Password: redisPassword, TLSConfig: &tls.Config{MinVersion: tls.VersionTLS12}, WriteTimeout: 5 * time.Second}
+	op := &redis.Options{Addr: redisHost, Password: redisPassword, WriteTimeout: 5 * time.Second}
 	client := redis.NewClient(op)
 
 	ctx := context.Background()
