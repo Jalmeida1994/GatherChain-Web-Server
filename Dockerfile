@@ -18,6 +18,9 @@ RUN go build -o gatherchain-app
 
 FROM debian:buster
 
+RUN apt-get update
+RUN apt-get install -y ca-certificates
+
 ENV APP_USER app
 ENV APP_HOME /go/src/gatherchain-app
 
