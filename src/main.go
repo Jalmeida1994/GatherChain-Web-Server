@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"net/http"
-//	"os"
+	"os"
+
+	//	"os"
 	"context"
 	"crypto/tls"
 	"log"
@@ -38,8 +40,8 @@ var appIP string
 
 // Existing code from above
 func handleRequests() {
-	redisHost := "gatherchain-cache.redis.cache.windows.net:6380"
-    redisPassword := "d9N64pdwWV8RgwArfKZDvenSzS80GhsP1bpOlDl98h8="
+	redisHost := os.Getenv("REDIS_HOST")
+    redisPassword := os.Getenv("REDIS_PASSWORD")
 	op := &redis.Options{Addr: redisHost, Password: redisPassword, TLSConfig: &tls.Config{MinVersion: tls.VersionTLS12}, WriteTimeout: 5 * time.Second, MaxRetries: 3}
 	client := redis.NewClient(op)
 
