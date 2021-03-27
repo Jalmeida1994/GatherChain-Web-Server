@@ -5,8 +5,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
-
-	//	"os"
 	"context"
 	"crypto/tls"
 	"log"
@@ -37,6 +35,9 @@ type userHandler struct {
 const keyPrefix = "user:"
 
 var appIP string
+
+var vmUsername string = os.Getenv("VM_USERNAME")
+var vmPassword string = os.Getenv("VM_PASSWORD")
 
 // Existing code from above
 func handleRequests() {
@@ -83,9 +84,9 @@ func initNet(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal(reqBody, &cp)
 
 	config := &ssh.ClientConfig{
-		User: "adminUsername",
+		User: vmUsername,
 		Auth: []ssh.AuthMethod{
-			ssh.Password("adminPassword2020")},
+			ssh.Password(vmPassword)},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 	
@@ -111,9 +112,9 @@ func clearNet(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal(reqBody, &cp)
 
 	config := &ssh.ClientConfig{
-		User: "adminUsername",
+		User: vmUsername,
 		Auth: []ssh.AuthMethod{
-			ssh.Password("adminPassword2020")},
+			ssh.Password(vmPassword)},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
@@ -137,9 +138,9 @@ func createGrp(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal(reqBody, &cp)
 
 	config := &ssh.ClientConfig{
-		User: "adminUsername",
+		User: vmUsername,
 		Auth: []ssh.AuthMethod{
-			ssh.Password("adminPassword2020")},
+			ssh.Password(vmPassword)},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
@@ -212,9 +213,9 @@ func pushHash(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal(reqBody, &cp)
 
 	config := &ssh.ClientConfig{
-		User: "adminUsername",
+		User: vmUsername,
 		Auth: []ssh.AuthMethod{
-			ssh.Password("adminPassword2020")},
+			ssh.Password(vmPassword)},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
@@ -238,9 +239,9 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 	json.Unmarshal(reqBody, &cp)
 
 	config := &ssh.ClientConfig{
-		User: "adminUsername",
+		User: vmUsername,
 		Auth: []ssh.AuthMethod{
-			ssh.Password("adminPassword2020")},
+			ssh.Password(vmPassword)},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
 
