@@ -9,7 +9,7 @@ import (
 	"crypto/tls"
 	"log"
 	"time"
-
+    "sync"
 	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/ssh"
@@ -261,11 +261,14 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 }
 
 func runCommand(cmd string, conn *ssh.Client, w http.ResponseWriter) {
+	var mutex = &sync.Mutex{}
+
 	sess, err := conn.NewSession()
 	if err != nil {
 		panic(err)
 	}
 	defer sess.Close()
+    mutex.Lock()
 
 	results, err := sess.Output(cmd)
 	if err != nil {
@@ -273,6 +276,8 @@ func runCommand(cmd string, conn *ssh.Client, w http.ResponseWriter) {
 		w.WriteHeader(500)
 		panic("Can't run remote command: " + err.Error())
 	}
+	mutex.Unlock()
+
 	// convert results into string and populate an instance of
 	// the scriptResponse struct
 	response := scriptResponse{string(results)}
