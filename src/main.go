@@ -152,7 +152,7 @@ func historyNet(w http.ResponseWriter, r *http.Request) {
 	defer conn.Close()
 
 	// TODO: check if user is admin
-	runCommand("sudo /var/lib/waagent/custom-script/download/0/project/bloc-server/commands/clear.sh", conn, w)
+	runCommand("sudo /var/lib/waagent/custom-script/download/0/project/bloc-server/commands/gethistory.sh "+cp.Group, conn, w)
 }
 
 func createGrp(w http.ResponseWriter, r *http.Request) {
