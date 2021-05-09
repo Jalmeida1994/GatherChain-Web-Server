@@ -1,15 +1,16 @@
 package main
 
 import (
-	"encoding/json"
-	"io/ioutil"
-	"net/http"
-	"os"
 	"context"
 	"crypto/tls"
+	"encoding/json"
+	"io/ioutil"
 	"log"
+	"net/http"
+	"os"
+	"sync"
 	"time"
-    "sync"
+
 	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/mux"
 	"golang.org/x/crypto/ssh"
@@ -42,7 +43,7 @@ var vmPassword string = os.Getenv("VM_PASSWORD")
 // Existing code from above
 func handleRequests() {
 	redisHost := os.Getenv("REDIS_HOST")
-    redisPassword := os.Getenv("REDIS_PASSWORD")
+	redisPassword := os.Getenv("REDIS_PASSWORD")
 	op := &redis.Options{Addr: redisHost, Password: redisPassword, TLSConfig: &tls.Config{MinVersion: tls.VersionTLS12}, WriteTimeout: 5 * time.Second, MaxRetries: 3}
 	client := redis.NewClient(op)
 
@@ -54,12 +55,22 @@ func handleRequests() {
 
 	uh := userHandler{client: client}
 
+	val, err := uh.client.Get(ctx, "appIP").Result()
+	if err == redis.Nil {
+		log.Println("appIP still does not exist")
+	} else if err != nil {
+		panic(err)
+	} else {
+		log.Println("appIP: " + val)
+		appIP = val
+	}
+
 	myRouter := mux.NewRouter().StrictSlash(true)
 	// creates a new instance of a mux router
 	myRouter.HandleFunc("/test", testFunc).Methods("POST")
 
 	// admin commands
-	myRouter.HandleFunc("/init", initNet).Methods("POST")
+	myRouter.HandleFunc("/init", uh.initNet).Methods("POST")
 	myRouter.HandleFunc("/clear", clearNet).Methods("POST")
 
 	// student commands
@@ -74,7 +85,7 @@ func handleRequests() {
 	log.Fatal(http.ListenAndServe(":8010", myRouter))
 }
 
-func initNet(w http.ResponseWriter, r *http.Request) {
+func (uh userHandler) initNet(w http.ResponseWriter, r *http.Request) {
 	// get the body of our POST request
 	// unmarshal this into a new Article struct
 	// append this to our Articles array.
@@ -89,9 +100,16 @@ func initNet(w http.ResponseWriter, r *http.Request) {
 			ssh.Password(vmPassword)},
 		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
 	}
-	
+
 	appIP = cp.IP + ":22"
 	log.Println(appIP)
+
+	err := uh.client.Set(r.Context(), "appIP", appIP, 0).Err()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	conn, err := ssh.Dial("tcp", appIP, config)
 	if err != nil {
 		panic(err)
@@ -268,7 +286,7 @@ func runCommand(cmd string, conn *ssh.Client, w http.ResponseWriter) {
 		panic(err)
 	}
 	defer sess.Close()
-    mutex.Lock()
+	mutex.Lock()
 
 	results, err := sess.Output(cmd)
 	if err != nil {
