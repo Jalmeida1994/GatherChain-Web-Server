@@ -28,7 +28,7 @@
 <br />
 <p align="center">
   <a href="https://github.com/Jalmeida1994/GatherChain-Web-Server">
-    <img src="images/Logo-02.png" alt="Logo" width="80">
+    <img src="images/Logo-02.png" alt="Logo" width="120">
   </a>
 
   <h3 align="center">GatherChain Web Server</h3>
