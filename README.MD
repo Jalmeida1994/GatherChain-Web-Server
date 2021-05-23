@@ -125,7 +125,7 @@ If you want to build the Docker image on premises and use it as you own, follow 
     * `REDIS_HOST`: URL of the Redis cache.
     * `REDIS_PASSWORD`: Password of the Redis cache.
 
-    More information about setting envoronment variables can be found [here](https://linuxize.com/post/how-to-set-and-list-environment-variables-in-linux/)
+    More information about setting environment variables can be found [here](https://linuxize.com/post/how-to-set-and-list-environment-variables-in-linux/)
 
 3. Build the image
     ```
