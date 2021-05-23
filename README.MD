@@ -145,7 +145,6 @@ If you want to build the Docker image on premises and use it as you own, follow 
 See the [open issues](https://github.com/Jalmeida1994/GatherChain-Web-Server/issues) for a list of proposed features (and known issues).
 
 
-
 <!-- CONTRIBUTING -->
 ## Contributing
 
