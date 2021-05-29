@@ -61,7 +61,7 @@ func handleRequests() {
 
 	// admin commands
 	myRouter.HandleFunc("/init", initNet).Methods("POST")
-	myRouter.HandleFunc("/clear", clearNet).Methods("POST")
+	myRouter.HandleFunc("/clear", uh.clearNet).Methods("POST")
 	myRouter.HandleFunc("/history", historyNet).Methods("POST")
 
 	// student commands
@@ -102,14 +102,25 @@ func initNet(w http.ResponseWriter, r *http.Request) {
 	runCommand("sudo /var/lib/waagent/custom-script/download/0/project/bloc-server/commands/init.sh "+cp.Author+" "+cp.Group+" "+cp.Commit, conn, w)
 }
 
-func clearNet(w http.ResponseWriter, r *http.Request) {
+func (uh userHandler) clearNet(w http.ResponseWriter, r *http.Request) {
 	// get the body of our POST request
 	// unmarshal this into a new Article struct
 	// append this to our Articles array.
-	reqBody, _ := ioutil.ReadAll(r.Body)
+	reqBody, err := ioutil.ReadAll(r.Body)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	var cp ContentPost
 	json.Unmarshal(reqBody, &cp)
+
+	_, err = uh.client.FlushAll(r.Context()).Result()
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
 
 	config := &ssh.ClientConfig{
 		User: vmUsername,
