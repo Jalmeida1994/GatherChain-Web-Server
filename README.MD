@@ -85,7 +85,7 @@ The other GatherChain projects are:
 * __GatherChain Desktop Client__: https://github.com/Jalmeida1994/GatherChain-DesktopClient
 * __GatherChain ARM Template__: https://github.com/Jalmeida1994/GatherChain-ARM-Template
 * __GatherChain Blockchain Server__: https://github.com/Jalmeida1994/GatherChain-BlockChain-Server
-* __GatherChain ARM Template__: https://github.com/Jalmeida1994/GatherChain-ARM-Template
+* __GatherChain Admin Commands__: https://github.com/Jalmeida1994/GatherChain-AdminCommands
 
 This repository serves as the Web server for the blockchain solution. It acts as a middle-man between the final users and the VM hosting the blockchain network. The Docker image can be found at [jalmeida1994/gatherchain-app](https://hub.docker.com/repository/docker/jalmeida1994/gatherchain-app).
 
