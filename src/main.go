@@ -85,6 +85,12 @@ func initNet(w http.ResponseWriter, r *http.Request) {
 	var cp ContentPost
 	json.Unmarshal(reqBody, &cp)
 
+	password := cp.Author
+	if password != vmPassword {
+		http.Error(w, "Wrong Password", http.StatusBadRequest)
+		return
+	}
+
 	config := &ssh.ClientConfig{
 		User: vmUsername,
 		Auth: []ssh.AuthMethod{
@@ -115,6 +121,12 @@ func (uh userHandler) clearNet(w http.ResponseWriter, r *http.Request) {
 
 	var cp ContentPost
 	json.Unmarshal(reqBody, &cp)
+
+	password := cp.Author
+	if password != vmPassword {
+		http.Error(w, "Wrong Password", http.StatusBadRequest)
+		return
+	}
 
 	_, err = uh.client.FlushAll(r.Context()).Result()
 	if err != nil {
