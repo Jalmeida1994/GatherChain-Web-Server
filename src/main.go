@@ -80,14 +80,21 @@ func initNet(w http.ResponseWriter, r *http.Request) {
 	// get the body of our POST request
 	// unmarshal this into a new Article struct
 	// append this to our Articles array.
-	reqBody, _ := ioutil.ReadAll(r.Body)
+	reqBody, err := ioutil.ReadAll(r.Body)
+
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
 
 	var cp ContentPost
 	json.Unmarshal(reqBody, &cp)
 
 	password := cp.Author
 	if password != vmPassword {
-		http.Error(w, "Wrong Password", http.StatusBadRequest)
+		log.Println("Password given: "+password)
+		log.Println("Correct password: "+password)
+		http.Error(w, "Wrong Password", http.StatusForbidden)
 		return
 	}
 
@@ -124,7 +131,9 @@ func (uh userHandler) clearNet(w http.ResponseWriter, r *http.Request) {
 
 	password := cp.Author
 	if password != vmPassword {
-		http.Error(w, "Wrong Password", http.StatusBadRequest)
+		log.Println("Password given: "+password)
+		log.Println("Correct password: "+password)
+		http.Error(w, "Wrong Password", http.StatusForbidden)
 		return
 	}
 
