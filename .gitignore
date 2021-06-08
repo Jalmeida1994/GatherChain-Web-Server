@@ -1,0 +1,21 @@
+# Mac Files
+.DS_Store
+
+#VSCode directory
+.vscode/
+
+# Binaries for programs and plugins
+src/*.exe
+src/*.exe~
+src/*.dll
+src/*.so
+src/*.dylib
+
+# Test binary, built with `go test -c`
+src/*.test
+
+# Output of the go coverage tool, specifically when used with LiteIDE
+src/*.out
+
+# Dependency directories (remove the comment below to include it)
+src/vendor/
