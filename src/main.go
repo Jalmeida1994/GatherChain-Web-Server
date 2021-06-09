@@ -8,7 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
-	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/go-redis/redis/v8"
@@ -33,6 +33,10 @@ type userHandler struct {
 	client *redis.Client
 }
 
+var (
+    locker    uint32
+)
+
 const keyPrefix = "user:"
 
 var appIP string = os.Getenv("VM_PUBLIC_IP") + ":22"
@@ -52,6 +56,8 @@ func handleRequests() {
 	if err != nil {
 		log.Fatalf("failed to connect with redis instance at %s - %v", redisHost, err)
 	}
+
+	log.Println("Reached server")
 
 	uh := userHandler{client: client}
 
@@ -81,6 +87,8 @@ func initNet(w http.ResponseWriter, r *http.Request) {
 	// unmarshal this into a new Article struct
 	// append this to our Articles array.
 	reqBody, err := ioutil.ReadAll(r.Body)
+
+	log.Println("Reached function")
 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -183,7 +191,6 @@ func historyNet(w http.ResponseWriter, r *http.Request) {
 	}
 	defer conn.Close()
 
-	// TODO: check if user is admin
 	runCommand("sudo /var/lib/waagent/custom-script/download/0/project/bloc-server/commands/gethistory.sh "+cp.Group, conn, w)
 }
 
@@ -320,14 +327,18 @@ func testFunc(w http.ResponseWriter, r *http.Request) {
 }
 
 func runCommand(cmd string, conn *ssh.Client, w http.ResponseWriter) {
-	var mutex = &sync.Mutex{}
+	if !atomic.CompareAndSwapUint32(&locker, 0, 1) {
+		log.Println("Locked out")
+		w.WriteHeader(500)
+		panic("Blockchain network being used, try again next time")
+    }                                          
+    defer atomic.StoreUint32(&locker, 0)  
 
 	sess, err := conn.NewSession()
 	if err != nil {
 		panic(err)
 	}
-	defer sess.Close()
-	mutex.Lock()
+	defer sess.Close()     
 
 	results, err := sess.Output(cmd)
 	if err != nil {
@@ -335,7 +346,6 @@ func runCommand(cmd string, conn *ssh.Client, w http.ResponseWriter) {
 		w.WriteHeader(500)
 		panic("Can't run remote command: " + err.Error())
 	}
-	mutex.Unlock()
 
 	// convert results into string and populate an instance of
 	// the scriptResponse struct
