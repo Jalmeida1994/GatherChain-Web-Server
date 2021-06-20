@@ -12,7 +12,16 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
+	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/mux"
+	"github.com/hyperledger/fabric-sdk-go/pkg/client/ledger"
+	"github.com/hyperledger/fabric-sdk-go/pkg/common/errors/retry"
+	"github.com/hyperledger/fabric-sdk-go/pkg/common/errors/status"
+	providersFab "github.com/hyperledger/fabric-sdk-go/pkg/common/providers/fab"
+	"github.com/hyperledger/fabric-sdk-go/pkg/core/config"
+	"github.com/hyperledger/fabric-sdk-go/pkg/fab"
+	"github.com/hyperledger/fabric-sdk-go/pkg/fabsdk"
+	"github.com/hyperledger/fabric-sdk-go/test/integration"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -34,7 +43,7 @@ type userHandler struct {
 }
 
 var (
-    locker    uint32
+	locker uint32
 )
 
 const keyPrefix = "user:"
@@ -56,8 +65,6 @@ func handleRequests() {
 	if err != nil {
 		log.Fatalf("failed to connect with redis instance at %s - %v", redisHost, err)
 	}
-
-	log.Println("Reached server")
 
 	uh := userHandler{client: client}
 
@@ -100,8 +107,8 @@ func initNet(w http.ResponseWriter, r *http.Request) {
 
 	password := cp.Author
 	if password != vmPassword {
-		log.Println("Password given: "+password)
-		log.Println("Correct password: "+password)
+		log.Println("Password given: " + password)
+		log.Println("Correct password: " + password)
 		http.Error(w, "Wrong Password", http.StatusForbidden)
 		return
 	}
@@ -121,6 +128,25 @@ func initNet(w http.ResponseWriter, r *http.Request) {
 
 	// TODO: check if user is admin
 	runCommand("sudo /var/lib/waagent/custom-script/download/0/project/bloc-server/commands/init.sh "+cp.Author+" "+cp.Group+" "+cp.Commit, conn, w)
+
+	// Using shared SDK instance to increase test speed.
+	testSetup := mainTestSetup
+
+	configProvider := config.FromFile(integration.GetConfigPath("channel0000_connection_for_gosdk.yaml"))
+	//Add entity matchers if local test
+	if integration.IsLocal() {
+		configProvider = integration.AddLocalEntityMapping(configProvider)
+	}
+
+	sdk, err := fabsdk.New(configProvider)
+	if err != nil {
+		panic(fmt.Sprintf("Failed to create new SDK: %s", err))
+	}
+	defer sdk.Close()
+
+	//prepare contexts
+	org1AdminChannelContext := sdk.ChannelContext(testSetup.ChannelID, fabsdk.WithUser(org1AdminUser), fabsdk.WithOrg(org1Name))
+
 }
 
 func (uh userHandler) clearNet(w http.ResponseWriter, r *http.Request) {
@@ -139,8 +165,8 @@ func (uh userHandler) clearNet(w http.ResponseWriter, r *http.Request) {
 
 	password := cp.Author
 	if password != vmPassword {
-		log.Println("Password given: "+password)
-		log.Println("Correct password: "+password)
+		log.Println("Password given: " + password)
+		log.Println("Correct password: " + password)
 		http.Error(w, "Wrong Password", http.StatusForbidden)
 		return
 	}
@@ -167,7 +193,6 @@ func (uh userHandler) clearNet(w http.ResponseWriter, r *http.Request) {
 	// TODO: check if user is admin
 	runCommand("sudo /var/lib/waagent/custom-script/download/0/project/bloc-server/commands/clear.sh", conn, w)
 }
-
 
 func historyNet(w http.ResponseWriter, r *http.Request) {
 	// get the body of our POST request
@@ -331,14 +356,14 @@ func runCommand(cmd string, conn *ssh.Client, w http.ResponseWriter) {
 		log.Println("Locked out")
 		w.WriteHeader(500)
 		panic("Blockchain network being used, try again next time")
-    }                                          
-    defer atomic.StoreUint32(&locker, 0)  
+	}
+	defer atomic.StoreUint32(&locker, 0)
 
 	sess, err := conn.NewSession()
 	if err != nil {
 		panic(err)
 	}
-	defer sess.Close()     
+	defer sess.Close()
 
 	results, err := sess.Output(cmd)
 	if err != nil {
