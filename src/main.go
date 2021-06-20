@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -12,16 +13,10 @@ import (
 	"time"
 
 	"github.com/go-redis/redis/v8"
-	"github.com/golang/protobuf/proto"
 	"github.com/gorilla/mux"
-	"github.com/hyperledger/fabric-sdk-go/pkg/client/ledger"
-	"github.com/hyperledger/fabric-sdk-go/pkg/common/errors/retry"
-	"github.com/hyperledger/fabric-sdk-go/pkg/common/errors/status"
-	providersFab "github.com/hyperledger/fabric-sdk-go/pkg/common/providers/fab"
+	"github.com/hyperledger/fabric-sdk-go/pkg/client/channel"
 	"github.com/hyperledger/fabric-sdk-go/pkg/core/config"
-	"github.com/hyperledger/fabric-sdk-go/pkg/fab"
 	"github.com/hyperledger/fabric-sdk-go/pkg/fabsdk"
-	"github.com/hyperledger/fabric-sdk-go/test/integration"
 	"golang.org/x/crypto/ssh"
 )
 
@@ -41,6 +36,10 @@ type scriptResponse struct {
 type userHandler struct {
 	client *redis.Client
 }
+
+var sdk *fabsdk.FabricSDK
+
+const ConfigFile = "channel0000_connection_for_gosdk.yaml"
 
 var (
 	locker uint32
@@ -129,24 +128,24 @@ func initNet(w http.ResponseWriter, r *http.Request) {
 	// TODO: check if user is admin
 	runCommand("sudo /var/lib/waagent/custom-script/download/0/project/bloc-server/commands/init.sh "+cp.Author+" "+cp.Group+" "+cp.Commit, conn, w)
 
-	// Using shared SDK instance to increase test speed.
-	testSetup := mainTestSetup
+	//TODO: Copy file connection from blockchain server to web server
 
-	configProvider := config.FromFile(integration.GetConfigPath("channel0000_connection_for_gosdk.yaml"))
-	//Add entity matchers if local test
-	if integration.IsLocal() {
-		configProvider = integration.AddLocalEntityMapping(configProvider)
-	}
-
-	sdk, err := fabsdk.New(configProvider)
+	err = Initialize()
 	if err != nil {
-		panic(fmt.Sprintf("Failed to create new SDK: %s", err))
+		panic(err)
 	}
-	defer sdk.Close()
 
-	//prepare contexts
-	org1AdminChannelContext := sdk.ChannelContext(testSetup.ChannelID, fabsdk.WithUser(org1AdminUser), fabsdk.WithOrg(org1Name))
+}
 
+func Initialize() error {
+	var err error
+	// Initialize the SDK with the configuration file
+	sdk, err = fabsdk.New(config.FromFile(ConfigFile))
+	if err != nil {
+		return fmt.Errorf("failed to create sdk: %v", err)
+	}
+	fmt.Println("Initialization Successful")
+	return nil
 }
 
 func (uh userHandler) clearNet(w http.ResponseWriter, r *http.Request) {
@@ -302,6 +301,9 @@ func pushHash(w http.ResponseWriter, r *http.Request) {
 
 	var cp ContentPost
 	json.Unmarshal(reqBody, &cp)
+
+	//prepare contexts
+	studentUserChannelContext := sdk.ChannelContext(cp.Group, fabsdk.WithUser(cp.Author), fabsdk.WithOrg("student.com"))
 
 	config := &ssh.ClientConfig{
 		User: vmUsername,
