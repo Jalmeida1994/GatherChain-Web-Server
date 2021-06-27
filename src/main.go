@@ -12,6 +12,8 @@ import (
 	"sync/atomic"
 	"time"
 
+	scp "github.com/bramvdbogaerde/go-scp"
+	"github.com/bramvdbogaerde/go-scp/auth"
 	"github.com/go-redis/redis/v8"
 	"github.com/gorilla/mux"
 	"github.com/hyperledger/fabric-sdk-go/pkg/client/channel"
@@ -39,7 +41,7 @@ type userHandler struct {
 
 var sdk *fabsdk.FabricSDK
 
-const ConfigFile = "channel0000_connection_for_gosdk.yaml"
+const ConfigFile = "./channel0000_connection_for_gosdk.yaml"
 
 var (
 	locker uint32
@@ -128,7 +130,33 @@ func initNet(w http.ResponseWriter, r *http.Request) {
 	// TODO: check if user is admin
 	runCommand("sudo /var/lib/waagent/custom-script/download/0/project/bloc-server/commands/init.sh "+cp.Author+" "+cp.Group+" "+cp.Commit, conn, w)
 
-	//TODO: Copy file connection from blockchain server to web server
+	// Create a new SCP client
+	scpClient := scp.NewClient(appIP, config)
+
+	// Connect to the remote server
+	err := scpClient.Connect()
+	if err != nil {
+		fmt.Println("Couldn't establish a connection to the remote server ", err)
+		return
+	}
+
+	// Open a file we can transfer to the remote container.
+	f, _ := os.Open("./data/input.txt")
+	defer f.Close()
+
+	// Create a local file to write to.
+	f, err := os.OpenFile(ConfigFile, os.O_RDWR|os.O_CREATE, 0777)
+	if err != nil {
+		t.Errorf("Couldn't open the output file")
+	}
+	defer f.Close()
+
+	// Use a file name with exotic characters and spaces in them.
+	// If this test works for this, simpler files should not be a problem.
+	err = client.CopyFromRemote(f, "/path/channel0000_connection_for_gosdk.yaml")
+	if err != nil {
+		t.Errorf("Copy failed from remote")
+	}
 
 	err = Initialize()
 	if err != nil {
